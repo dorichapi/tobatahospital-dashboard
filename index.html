@@ -1,7 +1,63 @@
-<script>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病院経営ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .date-display { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
+        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
+        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
+        .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
+        .title { font-weight: bold; font-size: 1.4em; margin-bottom: 5px; }
+        .value { font-size: 2.2em; }
+        canvas { width: 100% !important; height: 200px !important; }
+    </style>
+</head>
+<body>
+
+    <h1>病院経営ダッシュボード</h1>
+
+    <div class="date-display" id="latest-date">日付: --</div>
+
+    <div class="dashboard">
+        <div class="card" id="bed-usage">
+            <div class="title">病床利用率</div>
+            <div class="value">--%</div>
+        </div>
+        <div class="card" id="ambulance">
+            <div class="title">救急車搬入</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="inpatients">
+            <div class="title">入院患者</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="discharges">
+            <div class="title">退院予定</div>
+            <div class="value">--</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="bedChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="ambulanceChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="inpatientsChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="dischargesChart"></canvas>
+    </div>
+
+    <script>
     async function fetchData() {
         try {
-            const apiUrl = "https://script.google.com/macros/s/AKfycbyW6CCYYWhPIYrtJrL_rHOsjkwsbUAzSC1hGrbXkvOovdfp3OspzoFtbU0zEK9yW9II/exec";
+            const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
             const response = await fetch(apiUrl);
             const result = await response.json();
 
@@ -20,14 +76,9 @@
 
             const latestData = data[data.length - 1];
 
-            // **最終入力時間を日本時間 (JST) に変換**
-            const lastEditTime = new Date(result.lastEditTime);
-            const jstOffset = 9 * 60 * 60 * 1000; // UTC +9時間（ミリ秒）
-            const jstTime = new Date(lastEditTime.getTime() + jstOffset);
-            const formattedTime = `${jstTime.getHours()}時${String(jstTime.getMinutes()).padStart(2, '0')}分`;
-
-            document.getElementById("latest-date").innerText = `日付: ${formatChartLabels([latestData["日付"]])[0]} ${formattedTime}`;
-            document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"]}%`;
+            // **日付のみ表示（時刻は削除）**
+            document.getElementById("latest-date").innerText = "日付: " + formatChartLabels([latestData["日付"]])[0];
+            document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
             document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
             document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
             document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
@@ -46,7 +97,7 @@
     function formatChartLabels(dates) {
         return dates.map((date, index) => {
             const d = new Date(date);
-            return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
+            return index === 0 ? (d.getMonth() + 1) + "月" + d.getDate() + "日" : d.getDate();
         });
     }
 
