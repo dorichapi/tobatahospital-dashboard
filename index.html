@@ -71,17 +71,19 @@
 
                 const data = result.data.map(row => ({
                     ...row,
-                    日付: new Date(row["日付"])
+                    日付: new Date(row["日付"]),
+                    "病床利用率 (%)": (row["病床利用率 (%)"] * 100).toFixed(1) // ✅ 100倍して `98.2%` の形式に変換
                 }));
 
                 const latestData = data[data.length - 1];
 
-                // **最終入力時間を追加**
+                // **最終入力時間を日本時間に変換**
                 const lastEditTime = new Date(result.lastEditTime);
+                lastEditTime.setHours(lastEditTime.getHours() + 9); // UTC → JST
                 const formattedTime = `${lastEditTime.getHours()}時${String(lastEditTime.getMinutes()).padStart(2, '0')}分`;
 
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])} ${formattedTime}`;
-                document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
+                document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"]}%`;
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
@@ -99,6 +101,35 @@
 
         function formatDate(dateObj) {
             return `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+        }
+
+        function createChart(canvasId, label, labels, data, color, unit) {
+            new Chart(document.getElementById(canvasId), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: unit
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         fetchData();
