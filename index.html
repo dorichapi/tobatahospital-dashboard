@@ -1,57 +1,110 @@
-<script>
-    async function fetchData() {
-        try {
-            const apiUrl = "https://script.google.com/macros/s/AKfycbzKpOJbCEKwdK6oDn9W5LbSxNhdlN-XDYJvLguT0UOIzDRVE1gtB3LHt8MZ_eLTh5I0/exec";
-            const response = await fetch(apiUrl);
-            const result = await response.json();
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病院経営ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .date-display { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
+        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
+        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
+        .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
+        .title { font-weight: bold; font-size: 1.4em; margin-bottom: 5px; }
+        .value { font-size: 2.2em; }
+        canvas { width: 100% !important; height: 200px !important; }
+    </style>
+</head>
+<body>
 
-            console.log("Fetched Data:", result);
+    <h1>病院経営ダッシュボード</h1>
 
-            if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
-                console.warn("⚠ データがありません。");
-                return;
+    <!-- 📌 最新の日付（最終入力時間付き）を大きく表示 -->
+    <div class="date-display" id="latest-date">日付: --</div>
+
+    <div class="dashboard">
+        <div class="card" id="bed-usage">
+            <div class="title">病床利用率</div>
+            <div class="value">--%</div>
+        </div>
+        <div class="card" id="ambulance">
+            <div class="title">救急車搬入</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="inpatients">
+            <div class="title">入院患者</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="discharges">
+            <div class="title">退院予定</div>
+            <div class="value">--</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="bedChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="ambulanceChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="inpatientsChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="dischargesChart"></canvas>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const apiUrl = "https://script.google.com/macros/s/AKfycbxgPjxCr0rhn8M4DK5I0bFxteADeDmtePyQVX81g5LpyiyGRcWI-YEmBo8NfIFCwiGs/exec";
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+
+                console.log("Fetched Data:", result);
+
+                if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+                    console.warn("⚠ データがありません。");
+                    return;
+                }
+
+                const data = result.data.map(row => ({
+                    ...row,
+                    日付: new Date(row["日付"]),
+                    "病床利用率 (%)": (row["病床利用率 (%)"] * 100).toFixed(1) // ✅ 100倍して `98.2%` の形式に変換
+                }));
+
+                const latestData = data[data.length - 1];
+
+                // **最終入力時間を日本時間に変換**
+                const lastEditTime = new Date(result.lastEditTime);
+                lastEditTime.setHours(lastEditTime.getHours() + 9); // UTC → JST
+                const formattedTime = `${lastEditTime.getHours()}時${String(lastEditTime.getMinutes()).padStart(2, '0')}分`;
+
+                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])} ${formattedTime}`;
+                document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"]}%`;
+                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
+                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
+                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
+
+                const labels = formatChartLabels(data.map(row => row["日付"]));
+
+                createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
+            } catch (error) {
+                console.error("❌ エラー発生:", error);
             }
-
-            const data = result.data.map(row => ({
-                ...row,
-                日付: new Date(row["日付"]),
-                "病床利用率 (%)": (row["病床利用率 (%)"] * 100).toFixed(1) // ✅ 100倍して `98.2%` の形式に変換
-            }));
-
-            const latestData = data[data.length - 1];
-
-            // **最終入力時間を日本時間に変換**
-            const lastEditTime = new Date(result.lastEditTime);
-            lastEditTime.setHours(lastEditTime.getHours() + 9); // UTC → JST
-            const formattedTime = `${lastEditTime.getHours()}時${String(lastEditTime.getMinutes()).padStart(2, '0')}分`;
-
-            document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])} ${formattedTime}`;
-            document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"]}%`;
-            document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
-            document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
-            document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
-
-            const labels = formatChartLabels(data.map(row => row["日付"]));
-
-            createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
-            createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
-            createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
-            createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
-        } catch (error) {
-            console.error("❌ エラー発生:", error);
         }
-    }
 
-    function formatChartLabels(dates) {
-        return dates.map((date, index) => {
-            const d = new Date(date);
-            return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
-        });
-    }
+        function formatChartLabels(dates) {
+            return dates.map((date, index) => {
+                const d = new Date(date);
+                return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
+            });
+        }
 
-    function formatDate(dateObj) {
-        return `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-    }
+        fetchData();
+    </script>
 
-    fetchData();
-</script>
+</body>
+</html>
