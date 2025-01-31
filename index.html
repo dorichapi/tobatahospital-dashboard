@@ -12,8 +12,8 @@
         .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
         .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
         .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
-        .title { font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
-        .value { font-size: 2em; }
+        .title { font-weight: bold; font-size: 1.4em; margin-bottom: 5px; }
+        .value { font-size: 2.2em; }
         canvas { width: 100% !important; height: 200px !important; }
     </style>
 </head>
@@ -64,7 +64,7 @@
             const month = date.getMonth() + 1;
             const day = date.getDate();
             const hours = date.getHours();
-            const minutes = date.getMinutes();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
             if (includeTime) {
                 return `${year}年${month}月${day}日 ${hours}時${minutes}分`;
             }
@@ -89,7 +89,7 @@
                     throw new Error("Invalid data format or empty response.");
                 }
 
-                // ✅ 最新の日付（スプレッドシートの最終行）を取得
+                // ✅ スプレッドシートの最終行の日付と時間を取得
                 const latestData = data[data.length - 1];
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"], true)}`;
 
@@ -103,7 +103,7 @@
                 const last3Days = data.slice(-3);
                 const labels = last3Days.map(row => formatDate(row["日付"]));
 
-                // ✅ 各グラフを作成（単位を縦軸の上に表示）
+                // ✅ 各グラフを作成（縦軸の単位を縦書きで表示）
                 createChart("bedChart", "病床利用率", labels, last3Days.map(row => row["病床利用率 (%)"]), "blue", "％");
                 createChart("ambulanceChart", "救急車搬入数", labels, last3Days.map(row => row["救急車搬入数"]), "red", "人");
                 createChart("inpatientsChart", "入院患者数", labels, last3Days.map(row => row["入院患者数"]), "green", "人");
@@ -135,7 +135,19 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: unit // ✅ 縦軸の一番上に単位を表示
+                                text: unit,
+                                font: { size: 16 },
+                                padding: { top: 10, bottom: 10 },
+                                color: "#000",
+                                rotation: 0, // ✅ 縦向きの日本語表記にする
+                            },
+                            ticks: {
+                                font: { size: 14 } // ✅ グラフのフォントサイズを大きく
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 14 } // ✅ 横軸のフォントサイズも大きく
                             }
                         }
                     }
