@@ -58,6 +58,19 @@
     </div>
 
     <script>
+        function formatDate(dateString, includeTime = false) {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            if (includeTime) {
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                return `${year}年${month}月${day}日 ${hours}時${minutes}分`;
+            }
+            return `${year}年${month}月${day}日`;
+        }
+
         async function fetchData() {
             try {
                 const apiUrl = "https://script.google.com/macros/s/AKfycbzeYDG6p3NaULVc7IZN-CB5ORMAIGtx86rZCBJwa1XtBrRoeofmLcf9zZuWGKBkIQ9d/exec?nocache=" + new Date().getTime();
@@ -78,17 +91,17 @@
 
                 // ✅ 最新の日付を表示
                 const latestData = data[data.length - 1];
-                document.getElementById("latest-date").innerText = `日付: ${latestData["日付"]}`;
+                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"], true)}`;
 
                 // ✅ 数値データを更新
                 document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
-                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"];
-                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"];
-                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"];
+                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
+                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
+                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
 
                 // ✅ 直近3日間のデータを取得
                 const last3Days = data.slice(-3);
-                const labels = last3Days.map(row => row["日付"]);
+                const labels = last3Days.map(row => formatDate(row["日付"]));
 
                 // ✅ 各データの配列
                 const bedUsageData = last3Days.map(row => row["病床利用率 (%)"]);
@@ -96,17 +109,17 @@
                 const inpatientsData = last3Days.map(row => row["入院患者数"]);
                 const dischargesData = last3Days.map(row => row["退院予定数"]);
 
-                // ✅ 各グラフを作成（縦軸を0から開始、サイズを調整）
-                createChart("bedChart", "病床利用率 (%)", labels, bedUsageData, "blue");
-                createChart("ambulanceChart", "救急車搬入数", labels, ambulanceData, "red");
-                createChart("inpatientsChart", "入院患者数", labels, inpatientsData, "green");
-                createChart("dischargesChart", "退院予定数", labels, dischargesData, "orange");
+                // ✅ 各グラフを作成（単位付きのラベル）
+                createChart("bedChart", "病床利用率 (%)", labels, bedUsageData, "blue", "%");
+                createChart("ambulanceChart", "救急車搬入数", labels, ambulanceData, "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, inpatientsData, "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, dischargesData, "orange", "人");
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
 
-        function createChart(canvasId, label, labels, data, color) {
+        function createChart(canvasId, label, labels, data, color, unit) {
             new Chart(document.getElementById(canvasId), {
                 type: "line",
                 data: {
@@ -122,10 +135,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    aspectRatio: 2, // ✅ 横長にしてサイズ調整
+                    aspectRatio: 2,
                     scales: {
                         y: {
-                            beginAtZero: true // ✅ 縦軸を0から開始！
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + unit;
+                                }
+                            }
                         }
                     }
                 }
