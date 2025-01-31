@@ -58,7 +58,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbw_gqzJft0wpsfUuhKWlpGJZuAzqegPxyqIwJLOmgtBonv8B7z0ODVCu-z1Zgx8VLr2/exec?nocache=" + new Date().getTime();
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -71,7 +71,7 @@
 
                 const latestData = data[data.length - 1];
 
-                document.getElementById("latest-date").innerText = `日付: ${formatDate(result.lastEditTime, true)}`;
+                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])}`;
 
                 document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
@@ -93,29 +93,6 @@
             return dates.map((date, index) => {
                 const d = new Date(date);
                 return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
-            });
-        }
-
-        function createChart(canvasId, label, labels, data, color, unit) {
-            new Chart(document.getElementById(canvasId), {
-                type: "line",
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: data,
-                        borderColor: color,
-                        fill: false
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: unit, rotation: 0 }
-                        }
-                    }
-                }
             });
         }
 
