@@ -20,7 +20,6 @@
 
     <h1>病院経営ダッシュボード</h1>
 
-    <!-- 📌 最新の日付（最終入力時間付き）を大きく表示 -->
     <div class="date-display" id="latest-date">日付: --</div>
 
     <div class="dashboard">
@@ -45,20 +44,11 @@
     <div class="chart-container">
         <canvas id="bedChart"></canvas>
     </div>
-    <div class="chart-container">
-        <canvas id="ambulanceChart"></canvas>
-    </div>
-    <div class="chart-container">
-        <canvas id="inpatientsChart"></canvas>
-    </div>
-    <div class="chart-container">
-        <canvas id="dischargesChart"></canvas>
-    </div>
 
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbxgPjxCr0rhn8M4DK5I0bFxteADeDmtePyQVX81g5LpyiyGRcWI-YEmBo8NfIFCwiGs/exec";
+                const apiUrl = "https://script.google.com/macros/s/AKfycbxthTdyJ__R9MZXn2VoHCOZmWVuMtlnua9av0NgHQKhCVZ7OYwkJHMmNgs0ZhObC7u9/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -82,7 +72,7 @@
                 lastEditTime.setHours(lastEditTime.getHours() + 9); // UTC → JST
                 const formattedTime = `${lastEditTime.getHours()}時${String(lastEditTime.getMinutes()).padStart(2, '0')}分`;
 
-                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])} ${formattedTime}`;
+                document.getElementById("latest-date").innerText = `日付: ${formatChartLabels([latestData["日付"]])[0]} ${formattedTime}`;
                 document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"]}%`;
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
@@ -97,9 +87,9 @@
         }
 
         function formatChartLabels(dates) {
-            return dates.map((date, index) => {
+            return dates.map(date => {
                 const d = new Date(date);
-                return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
+                return `${d.getMonth() + 1}月${d.getDate()}日`;
             });
         }
 
