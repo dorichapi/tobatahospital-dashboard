@@ -64,29 +64,58 @@
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
+                console.log("Fetched Data:", result); // ✅ データ構造を確認
+
                 const data = result.data;
-                const lastEditTime = new Date(result.lastEditTime);
-                const formattedLastEditTime = `${lastEditTime.getFullYear()}年${lastEditTime.getMonth() + 1}月${lastEditTime.getDate()}日 ${lastEditTime.getHours()}時${lastEditTime.getMinutes()}分`;
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error("データが取得できませんでした。");
+                }
 
-                document.getElementById("latest-date").innerText = `日付: ${formattedLastEditTime}`;
+                // ✅ 最新のデータを取得
+                const latestData = data[data.length - 1];
 
-                createChart("bedChart", "病床利用率", data, "病床利用率 (%)", "blue", "％");
-                createChart("ambulanceChart", "救急車搬入数", data, "救急車搬入数", "red", "人");
-                createChart("inpatientsChart", "入院患者数", data, "入院患者数", "green", "人");
-                createChart("dischargesChart", "退院予定数", data, "退院予定数", "orange", "人");
+                document.getElementById("latest-date").innerText = `日付: ${formatDate(result.lastEditTime, true)}`;
+
+                // ✅ 正しく値を取得
+                document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
+                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
+                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
+                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
+
+                // ✅ 直近3日間のデータを取得
+                const last3Days = data.slice(-3);
+                const labels = last3Days.map(row => formatDate(row["日付"]));
+
+                // ✅ 各グラフを作成
+                createChart("bedChart", "病床利用率", labels, last3Days.map(row => row["病床利用率 (%)"]), "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", labels, last3Days.map(row => row["救急車搬入数"]), "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, last3Days.map(row => row["入院患者数"]), "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, last3Days.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
 
-        function createChart(canvasId, label, data, key, color, unit) {
+        function formatDate(dateString, includeTime = false) {
+            const date = new Date(dateString);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            if (includeTime) {
+                return `${month}月${day}日 ${hours}時${minutes}分`;
+            }
+            return `${month}月${day}日`;
+        }
+
+        function createChart(canvasId, label, labels, data, color, unit) {
             new Chart(document.getElementById(canvasId), {
                 type: "line",
                 data: {
-                    labels: data.map(row => `${new Date(row["日付"]).getMonth() + 1}月${new Date(row["日付"]).getDate()}日`),
+                    labels: labels,
                     datasets: [{
                         label: label,
-                        data: data.map(row => row[key]),
+                        data: data,
                         borderColor: color,
                         fill: false
                     }]
@@ -95,7 +124,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: { display: true, text: unit, rotation: 0 } // ✅ 単位を縦向き
+                            title: { display: true, text: unit, rotation: 0 }
                         }
                     }
                 }
