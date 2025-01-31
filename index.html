@@ -58,22 +58,25 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbx75sxLUDML1TDAiO8t624-31kJ5_yZb8vG-Oj79Rmehmqzw3zWRMPiZxp-tif7BCrJ/exec";
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
                 console.log("Fetched Data:", result);
 
-                const data = result.data;
-                if (!Array.isArray(data) || data.length === 0) {
-                    console.warn("データがありません。");
+                if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+                    console.warn("⚠ データがありません。");
                     return;
                 }
+
+                const data = result.data.map(row => ({
+                    ...row,
+                    日付: new Date(row["日付"]) // ✅ 文字列の日付を `Date` オブジェクトに変換
+                }));
 
                 const latestData = data[data.length - 1];
 
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])}`;
-
                 document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
@@ -86,14 +89,60 @@
                 createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
                 createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("❌ エラー発生:", error);
             }
+        }
+
+        function formatDate(dateObj) {
+            return `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
         }
 
         function formatChartLabels(dates) {
             return dates.map((date, index) => {
-                const d = new Date(date);
-                return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return index === 0 ? `${month}月${day}日` : `${day}`;
+            });
+        }
+
+        function createChart(canvasId, label, labels, data, color, unit) {
+            new Chart(document.getElementById(canvasId), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: unit,
+                                font: { size: 16 },
+                                padding: { top: 10, bottom: 10 },
+                                color: "#000",
+                                rotation: 0 // ✅ 日本語の縦書きに対応
+                            },
+                            ticks: {
+                                font: { size: 14 }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 14 }
+                            }
+                        }
+                    }
+                }
             });
         }
 
