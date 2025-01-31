@@ -7,13 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        .container { width: 80%; margin: auto; }
+        .container { width: 90%; margin: auto; }
         .date-display { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
-        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; }
-        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 20%; background: #f9f9f9; }
-        .chart-container { width: 80%; margin: auto; margin-top: 30px; }
+        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
+        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
+        .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
         .title { font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
         .value { font-size: 2em; }
+        canvas { width: 100% !important; height: 200px !important; }
     </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
         </div>
     </div>
 
-    <!-- 📌 4つのグラフ（3日間の推移） -->
+    <!-- 📌 4つのグラフ（3日間の推移、サイズを小さく） -->
     <div class="chart-container">
         <canvas id="bedChart"></canvas>
     </div>
@@ -59,7 +60,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbzeYDG6p3NaULVc7IZN-CB5ORMAIGtx86rZCBJwa1XtBrRoeofmLcf9zZuWGKBkIQ9d/exec?nocache=" + new Date().getTime();
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec?nocache=" + new Date().getTime();
                 console.log("Fetching data from:", apiUrl);
 
                 const response = await fetch(apiUrl, { cache: "no-store" });
@@ -95,7 +96,7 @@
                 const inpatientsData = last3Days.map(row => row["入院患者数"]);
                 const dischargesData = last3Days.map(row => row["退院予定数"]);
 
-                // ✅ 各グラフを作成
+                // ✅ 各グラフを作成（縦軸を0から開始、サイズを調整）
                 createChart("bedChart", "病床利用率 (%)", labels, bedUsageData, "blue");
                 createChart("ambulanceChart", "救急車搬入数", labels, ambulanceData, "red");
                 createChart("inpatientsChart", "入院患者数", labels, inpatientsData, "green");
@@ -117,6 +118,16 @@
                         backgroundColor: color,
                         fill: false
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 2, // ✅ 横長にしてサイズ調整
+                    scales: {
+                        y: {
+                            beginAtZero: true // ✅ 縦軸を0から開始！
+                        }
+                    }
                 }
             });
         }
