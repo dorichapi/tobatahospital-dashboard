@@ -58,7 +58,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbw-841NT5cIEliVwWJPg5GnB3YiYAPqU3ayd5dmfJ-4T_xbJ418-g-v3xK0CJogMxwO/exec";
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -81,7 +81,7 @@
                 const formattedTime = `${lastEditTime.getHours()}時${String(lastEditTime.getMinutes()).padStart(2, '0')}分`;
 
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])} ${formattedTime}`;
-                document.getElementById("bed-usage").querySelector(".value").innerText = `${latestData["病床利用率 (%)"].toFixed(1)}%`;
+                document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
