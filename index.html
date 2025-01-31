@@ -21,7 +21,7 @@
 
     <h1>病院経営ダッシュボード</h1>
 
-    <!-- 📌 最新の日付を大きく表示 -->
+    <!-- 📌 最新の日付（最終入力時間）を大きく表示 -->
     <div class="date-display" id="latest-date">日付: --</div>
 
     <div class="dashboard">
@@ -63,12 +63,12 @@
             const year = date.getFullYear();
             const month = date.getMonth() + 1;
             const day = date.getDate();
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
             if (includeTime) {
-                const hours = date.getHours();
-                const minutes = date.getMinutes();
                 return `${year}年${month}月${day}日 ${hours}時${minutes}分`;
             }
-            return `${year}年${month}月${day}日`;
+            return `${month}月${day}日`; // ✅ 「＠＠月＠＠日」に変更
         }
 
         async function fetchData() {
@@ -89,7 +89,7 @@
                     throw new Error("Invalid data format or empty response.");
                 }
 
-                // ✅ 最新の日付を表示
+                // ✅ 最新の日付（スプレッドシートの最終行）を取得
                 const latestData = data[data.length - 1];
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"], true)}`;
 
@@ -103,17 +103,11 @@
                 const last3Days = data.slice(-3);
                 const labels = last3Days.map(row => formatDate(row["日付"]));
 
-                // ✅ 各データの配列
-                const bedUsageData = last3Days.map(row => row["病床利用率 (%)"]);
-                const ambulanceData = last3Days.map(row => row["救急車搬入数"]);
-                const inpatientsData = last3Days.map(row => row["入院患者数"]);
-                const dischargesData = last3Days.map(row => row["退院予定数"]);
-
-                // ✅ 各グラフを作成（単位付きのラベル）
-                createChart("bedChart", "病床利用率 (%)", labels, bedUsageData, "blue", "%");
-                createChart("ambulanceChart", "救急車搬入数", labels, ambulanceData, "red", "人");
-                createChart("inpatientsChart", "入院患者数", labels, inpatientsData, "green", "人");
-                createChart("dischargesChart", "退院予定数", labels, dischargesData, "orange", "人");
+                // ✅ 各グラフを作成（単位を縦軸の上に表示）
+                createChart("bedChart", "病床利用率", labels, last3Days.map(row => row["病床利用率 (%)"]), "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", labels, last3Days.map(row => row["救急車搬入数"]), "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, last3Days.map(row => row["入院患者数"]), "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, last3Days.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -139,10 +133,9 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + unit;
-                                }
+                            title: {
+                                display: true,
+                                text: unit // ✅ 縦軸の一番上に単位を表示
                             }
                         }
                     }
