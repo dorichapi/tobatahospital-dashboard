@@ -58,11 +58,12 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbyQCbPrDePRXlVj23zJhPkuw_0Ye_s4D0eoODVvc5Ht9-GPRww87OSKQ0Y3vEv0G3a4/exec?nocache=" + new Date().getTime();
+                const apiUrl = "https://script.google.com/macros/s/AKfycbw_gqzJft0wpsfUuhKWlpGJZuAzqegPxyqIwJLOmgtBonv8B7z0ODVCu-z1Zgx8VLr2/exec?nocache=" + new Date().getTime();
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
                 console.log("Fetched Data:", result);
+
                 const data = result.data;
                 if (!Array.isArray(data) || data.length === 0) {
                     throw new Error("データが取得できませんでした。");
