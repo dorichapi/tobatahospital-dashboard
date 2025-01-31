@@ -58,7 +58,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbw2Q_BdcrzEh8Uh_7DELfOVgmiPN4nyAoSf-iVUv4iU8NZ9i7oyT40aT7VM26wgiQgr/exec";
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -66,7 +66,8 @@
 
                 const data = result.data;
                 if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error("データが取得できませんでした。");
+                    console.warn("データがありません。");
+                    return;
                 }
 
                 const latestData = data[data.length - 1];
