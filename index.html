@@ -1,153 +1,30 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>病院経営ダッシュボード</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        .container { width: 90%; margin: auto; }
-        .date-display { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
-        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
-        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
-        .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
-        .title { font-weight: bold; font-size: 1.4em; margin-bottom: 5px; }
-        .value { font-size: 2.2em; }
-        canvas { width: 100% !important; height: 200px !important; }
-    </style>
-</head>
-<body>
+function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
 
-    <h1>病院経営ダッシュボード</h1>
+  var result = [];
+  var headers = data[0];
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    <div class="date-display" id="latest-date">日付: --</div>
+  for (var i = 1; i < data.length; i++) {
+    var row = {};
+    var rowDate = new Date(data[i][0]); // 1列目の日付を取得
+    rowDate.setHours(0, 0, 0, 0);
 
-    <div class="dashboard">
-        <div class="card" id="bed-usage">
-            <div class="title">病床利用率</div>
-            <div class="value">--%</div>
-        </div>
-        <div class="card" id="ambulance">
-            <div class="title">救急車搬入</div>
-            <div class="value">--</div>
-        </div>
-        <div class="card" id="inpatients">
-            <div class="title">入院患者</div>
-            <div class="value">--</div>
-        </div>
-        <div class="card" id="discharges">
-            <div class="title">退院予定</div>
-            <div class="value">--</div>
-        </div>
-    </div>
+    // 30日分のデータを取得
+    if ((today - rowDate) / (1000 * 60 * 60 * 24) <= 30) {
+      for (var j = 0; j < headers.length; j++) {
+        row[headers[j]] = data[i][j];
+      }
+      result.push(row);
+    }
+  }
 
-    <div class="chart-container">
-        <canvas id="bedChart"></canvas>
-    </div>
-    <div class="chart-container">
-        <canvas id="ambulanceChart"></canvas>
-    </div>
-    <div class="chart-container">
-        <canvas id="inpatientsChart"></canvas>
-    </div>
-    <div class="chart-container">
-        <canvas id="dischargesChart"></canvas>
-    </div>
+  // **最終入力時刻を取得**
+  var lastRow = sheet.getLastRow();
+  var lastEditTime = new Date(sheet.getRange(lastRow, 1).getValue());
 
-    <script>
-        async function fetchData() {
-            try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbyFl2WL5TYVnP3gFXsNIoN4hCcnZL-JBZ5liwqcwksRqMVt72HR4I64bd9XqOhMXwB1/exec";
-                const response = await fetch(apiUrl);
-                const result = await response.json();
-
-                console.log("Fetched Data:", result);
-
-                if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
-                    console.warn("⚠ データがありません。");
-                    return;
-                }
-
-                const data = result.data.map(row => ({
-                    ...row,
-                    日付: new Date(row["日付"]) // ✅ 文字列の日付を `Date` オブジェクトに変換
-                }));
-
-                const latestData = data[data.length - 1];
-
-                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"])}`;
-                document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
-                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
-                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
-                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
-
-                const labels = formatChartLabels(data.map(row => row["日付"]));
-
-                createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
-                createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
-                createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
-                createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
-            } catch (error) {
-                console.error("❌ エラー発生:", error);
-            }
-        }
-
-        function formatDate(dateObj) {
-            return `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-        }
-
-        function formatChartLabels(dates) {
-            return dates.map((date, index) => {
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
-                return index === 0 ? `${month}月${day}日` : `${day}`;
-            });
-        }
-
-        function createChart(canvasId, label, labels, data, color, unit) {
-            new Chart(document.getElementById(canvasId), {
-                type: "line",
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: data,
-                        borderColor: color,
-                        backgroundColor: color,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: unit,
-                                font: { size: 16 },
-                                padding: { top: 10, bottom: 10 },
-                                color: "#000",
-                                rotation: 0 // ✅ 日本語の縦書きに対応
-                            },
-                            ticks: {
-                                font: { size: 14 }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 14 }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        fetchData();
-    </script>
-
-</body>
-</html>
+  return ContentService.createTextOutput(JSON.stringify({ data: result, lastEditTime: lastEditTime.toISOString() }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
