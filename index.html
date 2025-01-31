@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病院経営ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { width: 80%; margin: auto; }
+        .dashboard { display: flex; justify-content: space-around; margin-top: 20px; }
+        .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 20%; }
+        .chart-container { width: 80%; margin: auto; }
+        .title { font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
+        .value { font-size: 2em; }
+    </style>
+</head>
+<body>
+
+    <h1>病院経営ダッシュボード</h1>
+
+    <div class="dashboard">
+        <div class="card" id="bed-usage">
+            <div class="title">病床利用率</div>
+            <div class="value">--%</div>
+        </div>
+        <div class="card" id="ambulance">
+            <div class="title">救急車搬入</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="inpatients">
+            <div class="title">入院患者</div>
+            <div class="value">--</div>
+        </div>
+        <div class="card" id="discharges">
+            <div class="title">退院予定</div>
+            <div class="value">--</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+
+            document.getElementById("bed-usage").querySelector(".value").innerText = data[data.length-1]["病床利用率 (%)"] + "%";
+            document.getElementById("ambulance").querySelector(".value").innerText = data[data.length-1]["救急車搬入数"];
+            document.getElementById("inpatients").querySelector(".value").innerText = data[data.length-1]["入院患者数"];
+            document.getElementById("discharges").querySelector(".value").innerText = data[data.length-1]["退院予定数"];
+
+            const labels = data.map(row => row["日付"]);
+            const values = data.map(row => row["病床利用率 (%)"]);
+
+            new Chart(document.getElementById("chart"), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "病床利用率 (%)",
+                        data: values,
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                }
+            });
+        }
+
+        fetchData();
+    </script>
+
+</body>
+</html>
