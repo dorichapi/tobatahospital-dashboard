@@ -59,7 +59,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbx9Y3SRfCk9pNhL0GNltMGJDT_w8ZAeQDSpGx7pkhppT-fRvc5gfnD1mt8DgwTw28Pd/exec";
+                const apiUrl = "https://script.google.com/macros/s/AKfycbzeYa5NWLrXcLjTVMSFEybesXipSIwWrHhz_jKsK5TAoEZ1dhC6wzzSpFJN9a91S7dP/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -86,6 +86,13 @@
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
+
+                const labels = formatChartLabels(data.map(row => row["日付"]));
+
+                createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
                 console.error("❌ エラー発生:", error);
             }
