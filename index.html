@@ -10,10 +10,10 @@
         .date-display { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
         .dashboard { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
         .card { padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); width: 22%; background: #f9f9f9; }
-        .chart-container { width: 80%; margin: auto; margin-top: 20px; }
+        .chart-container { width: 45%; display: inline-block; margin-top: 10px; }
         .title { font-weight: bold; font-size: 1.4em; margin-bottom: 5px; }
         .value { font-size: 2.2em; }
-        canvas { width: 100% !important; height: 300px !important; }
+        canvas { width: 100% !important; height: 200px !important; }
     </style>
 </head>
 <body>
@@ -44,6 +44,15 @@
     <div class="chart-container">
         <canvas id="bedChart"></canvas>
     </div>
+    <div class="chart-container">
+        <canvas id="ambulanceChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="inpatientsChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="dischargesChart"></canvas>
+    </div>
 
     <script>
         async function fetchData() {
@@ -59,7 +68,6 @@
                     return;
                 }
 
-                // データの変換
                 const data = result.data.map(row => ({
                     ...row,
                     日付: new Date(row["日付"]),
@@ -79,21 +87,21 @@
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
 
-                // グラフ用データの準備
                 const labels = formatChartLabels(data.map(row => row["日付"]));
-                const bedUsageData = data.map(row => row["病床利用率 (%)"]);
 
-                // グラフの作成
-                createChart("bedChart", "病床利用率", labels, bedUsageData, "blue", "％");
+                createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
                 console.error("❌ エラー発生:", error);
             }
         }
 
         function formatChartLabels(dates) {
-            return dates.map(date => {
+            return dates.map((date, index) => {
                 const d = new Date(date);
-                return `${d.getMonth() + 1}月${d.getDate()}日`;
+                return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
             });
         }
 
@@ -107,8 +115,7 @@
                         data: data,
                         borderColor: color,
                         backgroundColor: color,
-                        fill: false,
-                        tension: 0.1
+                        fill: false
                     }]
                 },
                 options: {
