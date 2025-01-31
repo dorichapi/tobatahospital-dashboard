@@ -59,7 +59,7 @@
     <script>
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbzeYa5NWLrXcLjTVMSFEybesXipSIwWrHhz_jKsK5TAoEZ1dhC6wzzSpFJN9a91S7dP/exec";
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec";
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
@@ -87,7 +87,7 @@
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
 
-                const labels = formatChartLabels(data.map(row => row["日付"]));
+                const labels = data.map(row => formatDate(row["日付"]));
 
                 createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
                 createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
