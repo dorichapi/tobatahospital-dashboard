@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <!-- 📌 4つのグラフ（3日間の推移、サイズを小さく） -->
+    <!-- 📌 4つのグラフ -->
     <div class="chart-container">
         <canvas id="bedChart"></canvas>
     </div>
@@ -58,97 +58,44 @@
     </div>
 
     <script>
-        function formatDate(dateString, includeTime = false) {
-            const date = new Date(dateString);
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const hours = date.getHours();
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            if (includeTime) {
-                return `${year}年${month}月${day}日 ${hours}時${minutes}分`;
-            }
-            return `${month}月${day}日`; // ✅ 「＠＠月＠＠日」に変更
-        }
-
         async function fetchData() {
             try {
-                const apiUrl = "https://script.google.com/macros/s/AKfycbyQyHPp6czDPoo2LcrjnexuO61lBxjPOUibIhHUNwIw9FcH30wkkvXFKV2ku9j5j7-C/exec?nocache=" + new Date().getTime();
-                console.log("Fetching data from:", apiUrl);
+                const apiUrl = "https://script.google.com/macros/s/あなたのデプロイURL/exec?nocache=" + new Date().getTime();
+                const response = await fetch(apiUrl);
+                const result = await response.json();
 
-                const response = await fetch(apiUrl, { cache: "no-store" });
+                const data = result.data;
+                const lastEditTime = new Date(result.lastEditTime);
+                const formattedLastEditTime = `${lastEditTime.getFullYear()}年${lastEditTime.getMonth() + 1}月${lastEditTime.getDate()}日 ${lastEditTime.getHours()}時${lastEditTime.getMinutes()}分`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
+                document.getElementById("latest-date").innerText = `日付: ${formattedLastEditTime}`;
 
-                const data = await response.json();
-                console.log("Fetched data:", data); // ✅ データを確認
-
-                if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error("Invalid data format or empty response.");
-                }
-
-                // ✅ スプレッドシートの最終行の日付と時間を取得
-                const latestData = data[data.length - 1];
-                document.getElementById("latest-date").innerText = `日付: ${formatDate(latestData["日付"], true)}`;
-
-                // ✅ 数値データを更新
-                document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
-                document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
-                document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
-                document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
-
-                // ✅ 直近3日間のデータを取得
-                const last3Days = data.slice(-3);
-                const labels = last3Days.map(row => formatDate(row["日付"]));
-
-                // ✅ 各グラフを作成（縦軸の単位を縦書きで表示）
-                createChart("bedChart", "病床利用率", labels, last3Days.map(row => row["病床利用率 (%)"]), "blue", "％");
-                createChart("ambulanceChart", "救急車搬入数", labels, last3Days.map(row => row["救急車搬入数"]), "red", "人");
-                createChart("inpatientsChart", "入院患者数", labels, last3Days.map(row => row["入院患者数"]), "green", "人");
-                createChart("dischargesChart", "退院予定数", labels, last3Days.map(row => row["退院予定数"]), "orange", "人");
+                createChart("bedChart", "病床利用率", data, "病床利用率 (%)", "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", data, "救急車搬入数", "red", "人");
+                createChart("inpatientsChart", "入院患者数", data, "入院患者数", "green", "人");
+                createChart("dischargesChart", "退院予定数", data, "退院予定数", "orange", "人");
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
 
-        function createChart(canvasId, label, labels, data, color, unit) {
+        function createChart(canvasId, label, data, key, color, unit) {
             new Chart(document.getElementById(canvasId), {
                 type: "line",
                 data: {
-                    labels: labels,
+                    labels: data.map(row => `${new Date(row["日付"]).getMonth() + 1}月${new Date(row["日付"]).getDate()}日`),
                     datasets: [{
                         label: label,
-                        data: data,
+                        data: data.map(row => row[key]),
                         borderColor: color,
-                        backgroundColor: color,
                         fill: false
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    aspectRatio: 2,
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: unit,
-                                font: { size: 16 },
-                                padding: { top: 10, bottom: 10 },
-                                color: "#000",
-                                rotation: 0, // ✅ 縦向きの日本語表記にする
-                            },
-                            ticks: {
-                                font: { size: 14 } // ✅ グラフのフォントサイズを大きく
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 14 } // ✅ 横軸のフォントサイズも大きく
-                            }
+                            title: { display: true, text: unit, rotation: 0 } // ✅ 単位を縦向き
                         }
                     }
                 }
