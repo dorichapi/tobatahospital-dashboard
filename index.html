@@ -21,7 +21,6 @@
 
     <h1>病院経営ダッシュボード</h1>
 
-    <!-- 📌 最新の日付（最終入力時間）を大きく表示 -->
     <div class="date-display" id="latest-date">日付: --</div>
 
     <div class="dashboard">
@@ -43,7 +42,6 @@
         </div>
     </div>
 
-    <!-- 📌 4つのグラフ -->
     <div class="chart-container">
         <canvas id="bedChart"></canvas>
     </div>
@@ -64,48 +62,37 @@
                 const response = await fetch(apiUrl);
                 const result = await response.json();
 
-                console.log("Fetched Data:", result); // ✅ データ構造を確認
-
+                console.log("Fetched Data:", result);
                 const data = result.data;
                 if (!Array.isArray(data) || data.length === 0) {
                     throw new Error("データが取得できませんでした。");
                 }
 
-                // ✅ 最新のデータを取得
                 const latestData = data[data.length - 1];
 
                 document.getElementById("latest-date").innerText = `日付: ${formatDate(result.lastEditTime, true)}`;
 
-                // ✅ 正しく値を取得
                 document.getElementById("bed-usage").querySelector(".value").innerText = latestData["病床利用率 (%)"] + "%";
                 document.getElementById("ambulance").querySelector(".value").innerText = latestData["救急車搬入数"] + "人";
                 document.getElementById("inpatients").querySelector(".value").innerText = latestData["入院患者数"] + "人";
                 document.getElementById("discharges").querySelector(".value").innerText = latestData["退院予定数"] + "人";
 
-                // ✅ 直近3日間のデータを取得
-                const last3Days = data.slice(-3);
-                const labels = last3Days.map(row => formatDate(row["日付"]));
+                const labels = formatChartLabels(data.map(row => row["日付"]));
 
-                // ✅ 各グラフを作成
-                createChart("bedChart", "病床利用率", labels, last3Days.map(row => row["病床利用率 (%)"]), "blue", "％");
-                createChart("ambulanceChart", "救急車搬入数", labels, last3Days.map(row => row["救急車搬入数"]), "red", "人");
-                createChart("inpatientsChart", "入院患者数", labels, last3Days.map(row => row["入院患者数"]), "green", "人");
-                createChart("dischargesChart", "退院予定数", labels, last3Days.map(row => row["退院予定数"]), "orange", "人");
+                createChart("bedChart", "病床利用率", labels, data.map(row => row["病床利用率 (%)"]), "blue", "％");
+                createChart("ambulanceChart", "救急車搬入数", labels, data.map(row => row["救急車搬入数"]), "red", "人");
+                createChart("inpatientsChart", "入院患者数", labels, data.map(row => row["入院患者数"]), "green", "人");
+                createChart("dischargesChart", "退院予定数", labels, data.map(row => row["退院予定数"]), "orange", "人");
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
 
-        function formatDate(dateString, includeTime = false) {
-            const date = new Date(dateString);
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const hours = date.getHours();
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            if (includeTime) {
-                return `${month}月${day}日 ${hours}時${minutes}分`;
-            }
-            return `${month}月${day}日`;
+        function formatChartLabels(dates) {
+            return dates.map((date, index) => {
+                const d = new Date(date);
+                return index === 0 ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getDate()}`;
+            });
         }
 
         function createChart(canvasId, label, labels, data, color, unit) {
